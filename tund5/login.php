@@ -1,6 +1,13 @@
 <?php
 	require("../../../config.php");
+	require("functions.php");
 	//echo $serverHost;
+	
+	//Kui on sisseloginud
+	if(isset($_SESSION["userID"])){
+		header("Location: main.php");
+		exit();
+	}
 	
 	$signupFirstName = "";
 	$signupFamilyName = "";
@@ -12,6 +19,7 @@
 	$signupBirthDate = null;
 	
 	$loginEmail = "";
+	$notice ="";
 	
 	$signupFirstNameError = "";
 	$signupFamilyNameError = "";
@@ -20,21 +28,28 @@
 	$signupEmailError = "";
 	$signupPasswordError = "";
 
+	//Kas klõpsati sisselogimise nuppu
+	if(isset($_POST["signInButton"])){
 	
-	//kas on kasutajanimi sisestatud
-	if (isset ($_POST["loginEmail"])){
-		if (empty ($_POST["loginEmail"])){
-			$loginEmailError ="NB! Ilma selleta ei saa sisse logida!";
-		} else {
-			$loginEmail = $_POST["loginEmail"];
+		//kas on kasutajanimi sisestatud
+		if (isset ($_POST["loginEmail"])){
+			if (empty ($_POST["loginEmail"])){
+				$loginEmailError ="NB! Ilma selleta ei saa sisse logida!";
+			} else {
+				$loginEmail = $_POST["loginEmail"];
+			}
+		}
+		
+		//Kas kõik on sisestatud
+		if(!empty($loginEmail) and !empty($_POST["loginPassword"])){
+			//echo "Logime sisse";
+			$notice = signIn($loginEmail, $_POST["loginPassword"]);
+			
 		}
 	}
 	
-	
 	//Kas luuakse uut kasutajat, vajutati nuppu
 	if(isset($_POST["signUpButton"])){
-		
-	
 	
 	//kontrollime, kas kirjutati eesnimi
 	if (isset ($_POST["signupFirstName"])){
@@ -103,9 +118,10 @@
 		if (empty ($_POST["signupPassword"])){
 			$signupPasswordError = "NB! Parooli väli on kohustuslik!";
 		} else {
-			//polnud tühi
 			if (strlen($_POST["signupPassword"]) < 8){
 				$signupPasswordError = "NB! Liiga lühike salasõna, vaja vähemalt 8 tähemärki!";
+			} else{
+				$signupPassword = $_POST["signupPassword"];
 			}
 		}
 	}
@@ -116,29 +132,7 @@
 			$signupGenderError = " (Palun vali sobiv sugu!) Määramata!";
 	}
 	
-	//UUE KASUTAJA LISAMINE ANDMEBAASI
-	if(!empty($_POST["signupPassword"]) and empty($signupFirstNameError) and empty($signupFamilyNameError) and empty($signupBirthDayError) and empty($signupGenderError) and empty($signupEmailError) and empty($signupPasswordError)){
-		echo "Hakkan andmeid salvestama";
-		$signupPassword = hash("sha512", $_POST["signupPassword"]);
-		
-		//Ühendus serveriga
-		$database = "if17_taavi_meinberg";
-		$mysqli = new mysqli($serverHost, $serverUserName, $serverPassword, $database);
-		//käsk serverlile
-		$stmt = $mysqli->prepare("INSERT INTO vpusers (firstname, lastname, birthday, gender, email, password) VALUES (?, ?, ? ,? ,?, ?)");
-		echo $mysqli->error;
-		//s - string
-		//i - int
-		//d - decimal
-		$stmt->bind_param("sssiss", $signupFirstName, $signupFamilyName, $signupBirthDate, $gender, $signupEmail, $signupPassword);
-		//$stmt->execute();
-		if($stmt->execute()){
-			echo "Õnnestus";
-		} else{
-			echo "Tekkis viga: ". $stmt->error;
-		}
-		
-	}
+	
 	}
 	//Uue kasutaja loomise lõpp
 	
@@ -170,6 +164,10 @@
 	}
 	$signupMonthSelectHTML .="</select> \n";
 	
+	//UUE KASUTAJA LISAMINE ANDMEBAASI
+	if(!empty($_POST["signupPassword"]) and empty($signupFirstNameError) and empty($signupFamilyNameError) and empty($signupBirthDayError) and empty($signupGenderError) and empty($signupEmailError) and empty($signupPasswordError)){
+		signUp($signupFirstName, $signupFamilyName, $signupBirthDate, $gender, $signupEmail, $signupPassword);
+	}
 	
 	//Tekitame aasta valiku
 	$signupYearSelectHTML = "";
@@ -206,6 +204,7 @@
 		<input name="loginPassword" placeholder="Salasõna" type="password">
 		<br><br>
 		<input name ="signInButton" type="submit" value="Logi sisse">
+		<p><?php echo $notice;?> </p>
 	</form>
 	
 	<h1>Loo kasutaja</h1>
