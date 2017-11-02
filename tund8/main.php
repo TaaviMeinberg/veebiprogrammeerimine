@@ -54,5 +54,6 @@
 	<img src="<?php echo $picDir . $picFile ?>" alt="Tallinna Ülikool">
 	<p><a href="?logout=1">Logi välja!</a></p>
 	<p><a href="userInfo.php">userInfo</a></p>
+	<p><a href="userIdeas.php">Head mõtted</a></p>
 </body>
 </html>
